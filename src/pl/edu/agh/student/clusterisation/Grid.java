@@ -1,17 +1,17 @@
 package pl.edu.agh.student.clusterisation;
 
 class Grid {
-    public Boolean visited;
-    public Boolean dense;
+    public boolean visited;
+    public boolean dense;
     public int cluster;
 
-    public Grid(Boolean v, int c, Boolean d) {
+    public Grid(boolean v, int c, boolean d) {
         visited = v;
         dense = d;
         cluster = c;
     }
 
-    public Boolean isDense() {
+    public boolean isDense() {
         return dense;
     }
 }
