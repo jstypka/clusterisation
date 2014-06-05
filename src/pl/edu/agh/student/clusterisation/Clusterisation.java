@@ -11,16 +11,37 @@ public class Clusterisation {
 
     public Map<Coordinates, Grid> gridList;
     public Map<Integer, Set<Coordinates>> clusters;
-    public Set<Coordinates> transitionalGrids;
+    public LinkedList<Coordinates> transitionalGrids;
 
     public static final String filename = "output/part-r-00000";
     public static final double TRANSITIONAL_THRESHOLD = 0.0;
-    public static final double DENSE_THRESHOLD = 0.0;
+    public static final double DENSE_THRESHOLD = 0.33;
 
     public Clusterisation() {
         gridList = new HashMap<>();
-        transitionalGrids = new HashSet<>();
+        transitionalGrids = new LinkedList<>();
         clusters = new HashMap<>();
+    }
+
+    public void printGridList() {
+        for(int i = Test.BOARD_SIZE -1; i >= 0; --i) {
+            for(int j = 0; j < Test.BOARD_SIZE; ++j) {
+                ArrayList<Integer> list = new ArrayList<>();
+                list.add(j);
+                list.add(i);
+                String c = " . ";
+                if(gridList.containsKey(new Coordinates(list))) {
+                    Grid g = gridList.get(new Coordinates(list));
+                    if(g.isDense()) {
+                        c = " D ";
+                    } else {
+                        c = " T ";
+                    }
+                }
+                System.out.print(c);
+            }
+            System.out.println();
+        }
     }
 
     public void readFromFile() {
@@ -70,7 +91,6 @@ public class Clusterisation {
         }
         return neighbours;
     }
-
 
     private Coordinates getBiggestDense(List<Coordinates> neighbours) {
         int clusterSize = -1;
@@ -122,8 +142,8 @@ public class Clusterisation {
         // add transitional neighbouring grids to the global list
         for(Coordinates c : neighbours){
             Grid neighbour_grid = gridList.get(c);
-            if(!neighbour_grid.isDense() && neighbour_grid.cluster == -1){
-                transitionalGrids.add(c);
+            if(!neighbour_grid.isDense() && neighbour_grid.cluster == -1 && !transitionalGrids.contains(c)){
+                transitionalGrids.addLast(c);
             }
         }
 
@@ -197,24 +217,38 @@ public class Clusterisation {
         boolean appliedChanges = true;
         while(appliedChanges) {
             appliedChanges = false;
-            for(Coordinates current_trans : transitionalGrids) {
+            for(int tr_grid = 0; tr_grid < transitionalGrids.size(); ++tr_grid) {
+                Coordinates current_trans = transitionalGrids.get(tr_grid);
+
+                // if it is already assigned, continue
+                if(gridList.get(current_trans).cluster != -1) {
+                    continue;
+                }
+
                 List<Coordinates> neighbours = getNeighbours(current_trans);
 
                 // check if all neighbours are in the same cluster
-                boolean oneCluster = true;
-                for(int i = 1; i < neighbours.size(); ++i) {
-                    if(gridList.get(neighbours.get(i)).cluster != gridList.get(neighbours.get(i-1)).cluster) {
-                        oneCluster = false;
-                        break;
+                if(neighbours.size() == current_trans.getSize()){
+                    boolean oneCluster = true;
+                    for(int i = 1; i < neighbours.size(); ++i) {
+                        if(gridList.get(neighbours.get(i)).cluster != gridList.get(neighbours.get(i - 1)).cluster) {
+                            oneCluster = false;
+                            break;
+                        }
                     }
-                }
-                if(oneCluster) {
-                    continue;
+                    if(oneCluster) {
+                        continue;
+                    }
                 }
 
                 // choose a dense grid which is a part of the biggest neighbouring cluster
                 Coordinates biggestDense = getBiggestDense(neighbours);
                 if(biggestDense != null) {
+
+                    assert !gridList.get(current_trans).isDense();
+                    assert gridList.get(biggestDense).isDense();
+                    assert gridList.get(biggestDense).cluster > -1;
+
                     // add current grid to the cluster
                     int newCluster = gridList.get(biggestDense).cluster;
                     addGridToCluster(current_trans, newCluster, neighbours);
@@ -252,19 +286,29 @@ public class Clusterisation {
     }
 
     public void printClusters() {
-        for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
-            System.out.println("Cluster " + entry.getKey());
-            System.out.println(entry.getValue());
+//        for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
+//            System.out.println("Cluster " + entry.getKey());
+//            System.out.println(entry.getValue());
+//        }
+        for(int i = Test.BOARD_SIZE -1; i >= 0; --i) {
+            for(int j = 0; j < Test.BOARD_SIZE; ++j) {
+                ArrayList<Integer> list = new ArrayList<>();
+                list.add(j);
+                list.add(i);
+                String c = " . ";
+                if(gridList.containsKey(new Coordinates(list))) {
+                    int g = gridList.get(new Coordinates(list)).cluster;
+                    if(g != -1){
+                        c = " " + Integer.toString(g) + " ";
+                    } else {
+                        c = Integer.toString(g) + " ";
+                    }
+
+                }
+                System.out.print(c);
+            }
+            System.out.println();
         }
-    }
-
-    public static void main(String[] args) {
-        Clusterisation c = new Clusterisation();
-
-        c.readFromFile();
-
-        c.clusterize();
-
-        c.printClusters();
+//        System.out.println(transitionalGrids);
     }
 }
