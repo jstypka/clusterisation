@@ -16,10 +16,6 @@ public class Coordinates {
         coords = new ArrayList<>(other.coords);
     }
 
-    public Coordinates() {
-        coords = new ArrayList<>();
-    }
-
     public Integer getDimension(int d) {
         if(coords != null && coords.size() > d) {
             return coords.get(d);

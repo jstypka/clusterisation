@@ -1,6 +1,5 @@
 package pl.edu.agh.student.clusterisation;
 
-import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -16,10 +15,6 @@ public class Clusterisation {
     public Map<Integer, Set<Coordinates>> clusters;
     public LinkedList<Coordinates> transitionalGrids;
 
-    public static final String filename = "output/part-r-00000";
-    public static final double TRANSITIONAL_THRESHOLD = 0.0;
-    public static final double DENSE_THRESHOLD = 0.33;
-
     public Clusterisation() {
         gridList = new HashMap<>();
         transitionalGrids = new LinkedList<>();
@@ -27,8 +22,8 @@ public class Clusterisation {
     }
 
     public void printGridList() {
-        for(int i = Test.BOARD_SIZE -1; i >= 0; --i) {
-            for(int j = 0; j < Test.BOARD_SIZE; ++j) {
+        for(int i = Main.BOARD_SIZE -1; i >= 0; --i) {
+            for(int j = 0; j < Main.BOARD_SIZE; ++j) {
                 ArrayList<Integer> list = new ArrayList<>();
                 list.add(j);
                 list.add(i);
@@ -45,25 +40,59 @@ public class Clusterisation {
             }
             System.out.println();
         }
+        System.out.println();
+    }
+
+    public void printClusters() {
+        for(int i = Main.BOARD_SIZE -1; i >= 0; --i) {
+            for(int j = 0; j < Main.BOARD_SIZE; ++j) {
+                ArrayList<Integer> list = new ArrayList<>();
+                list.add(j);
+                list.add(i);
+                String c = " . ";
+                if(gridList.containsKey(new Coordinates(list))) {
+                    int g = new Coordinates(list).getCluster(gridList);
+                    if(g == -1){
+                        c = Integer.toString(g) + " ";
+                    } else if (g < 10){
+                        c = " " + Integer.toString(g) + " ";
+                    } else {
+                        c = Integer.toString(g) + " ";
+                    }
+
+                }
+                System.out.print(c);
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    public void listClusters() {
+        int cluster = 1;
+        for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
+            System.out.println("Cluster " + cluster++);
+            System.out.println(entry.getValue());
+        }
     }
 
     public void readFromFile() {
         BufferedReader br;
         try {
-            br = new BufferedReader(new FileReader(filename));
+            br = new BufferedReader(new FileReader(Main.INPUT_FILE));
             String line;
             while ((line = br.readLine()) != null) {
                 String[] coords = line.split("\\t")[0].split(" ");
                 double density = Double.parseDouble(line.split("\\t")[1]);
 
-                if(density > TRANSITIONAL_THRESHOLD) { // te filtracje mozna przeprowadzic juz wczesniej
+                if(density > Main.TRANSITIONAL_THRESHOLD) { // te filtracje mozna przeprowadzic juz wczesniej
                     ArrayList<Integer> key = new ArrayList<>();
 
                     for(String coord : coords) {
                         key.add(Integer.parseInt(coord));
                     }
 
-                    gridList.put(new Coordinates(key), new Grid(false, -1, density > DENSE_THRESHOLD));
+                    gridList.put(new Coordinates(key), new Grid(false, -1, density > Main.DENSE_THRESHOLD));
                 }
             }
             br.close();
@@ -120,23 +149,6 @@ public class Clusterisation {
         return clusterFellows;
     }
 
-    private LinkedList<Integer> getPossibleClusters(List<Coordinates> neighbours) {
-        LinkedList<Integer> result = new LinkedList<>();
-        int largestYet = -1;
-        for(Coordinates c : neighbours) {
-            int cluster = c.getCluster(gridList);
-            if(cluster != -1) {
-                if(result.isEmpty() || clusters.get(cluster).size() > largestYet) {
-                    largestYet = clusters.get(cluster).size();
-                    result.addFirst(cluster);
-                } else {
-                    result.addLast(cluster);
-                }
-            }
-        }
-        return result;
-    }
-
     private void addGridToCluster(Coordinates gridToAdd, int cluster, List<Coordinates> neighbours) {
         Grid g = gridList.get(gridToAdd);
         g.cluster = cluster;
@@ -168,12 +180,18 @@ public class Clusterisation {
         return false;
     }
 
-    private List<Integer> getAdjacentClusters(List<Coordinates> neighbours) {
-        List<Integer> adjacentClusters = new LinkedList<>();
+    private LinkedList<Integer> getAdjacentClusters(List<Coordinates> neighbours) {
+        LinkedList<Integer> adjacentClusters = new LinkedList<>();
+        int largestYet = -1;
         for(Coordinates n: neighbours) {
             int c = n.getCluster(gridList);
             if(c != -1 && !adjacentClusters.contains(c)) {
-                adjacentClusters.add(c);
+                if(adjacentClusters.isEmpty() || clusters.get(c).size() > largestYet) {
+                    largestYet = clusters.get(c).size();
+                    adjacentClusters.addFirst(c);
+                } else {
+                    adjacentClusters.addLast(c);
+                }
             }
         }
         return adjacentClusters;
@@ -301,7 +319,7 @@ public class Clusterisation {
                 }
 
                 // try to join a cluster through a transitional grid
-                List<Integer> possibleClusters = getPossibleClusters(neighbours);
+                List<Integer> possibleClusters = getAdjacentClusters(neighbours);
                 for(int cluster : possibleClusters) {
                     List<Coordinates> coordsInCluster = getCoordsInCluster(cluster, neighbours);
 
@@ -313,7 +331,7 @@ public class Clusterisation {
                             break;
                         }
                     }
-
+                    // if yes add our grid to the cluster
                     if(allAreOutside) {
                         addGridToCluster(current_trans, cluster, neighbours);
                         appliedChanges = true;
@@ -324,11 +342,12 @@ public class Clusterisation {
         }
     }
 
-    public void mergeClusters() {
+    private void mergeClusters() {
         boolean appliedChanges = true;
         while(appliedChanges) {
             appliedChanges = false;
             for(Coordinates current_trans: transitionalGrids) {
+                // we are only interested in transitional grids
                 if(current_trans.getCluster(gridList) == -1) {
                     continue;
                 }
@@ -337,15 +356,16 @@ public class Clusterisation {
                 List<Coordinates> neighbours = getNeighbours(current_trans);
                 List<Integer> adjacentClusters = getAdjacentClusters(neighbours); // might be good to sort it
                 adjacentClusters.remove(new Integer(thisCluster));
+
+                // if surrounded by only two clusters - continue
                 if(adjacentClusters.size() == 1 && neighbours.size() == 2 * current_trans.getSize()) {
                     continue;
                 }
 
                 // try to merge each cluster with thisCluster
-                for(int i = 0; i < adjacentClusters.size(); ++i) {
-                    int c1 = adjacentClusters.get(i);
-                    if(tryToMerge(c1, thisCluster) && tryToMerge(thisCluster, c1)) {
-                        mergeTwoClusters(min(c1, thisCluster), max(c1, thisCluster));
+                for(int c : adjacentClusters) {
+                    if(tryToMerge(c, thisCluster) && tryToMerge(thisCluster, c)) {
+                        mergeTwoClusters(min(c, thisCluster), max(c, thisCluster));
                         appliedChanges = true;
                         break;
                     }
@@ -358,34 +378,5 @@ public class Clusterisation {
         createClusters();
         attachTransitionalGrids();
         mergeClusters();
-    }
-
-    public void printClusters() {
-//        for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
-//            System.out.println("Cluster " + entry.getKey());
-//            System.out.println(entry.getValue());
-//        }
-        for(int i = Test.BOARD_SIZE -1; i >= 0; --i) {
-            for(int j = 0; j < Test.BOARD_SIZE; ++j) {
-                ArrayList<Integer> list = new ArrayList<>();
-                list.add(j);
-                list.add(i);
-                String c = " . ";
-                if(gridList.containsKey(new Coordinates(list))) {
-                    int g = new Coordinates(list).getCluster(gridList);
-                    if(g == -1){
-                        c = Integer.toString(g) + " ";
-                    } else if (g < 10){
-                        c = " " + Integer.toString(g) + " ";
-                    } else {
-                        c = Integer.toString(g) + " ";
-                    }
-
-                }
-                System.out.print(c);
-            }
-            System.out.println();
-        }
-        System.out.println();
     }
 }
