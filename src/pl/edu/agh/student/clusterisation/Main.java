@@ -21,11 +21,11 @@ public class Main {
             Random rand = new Random();
             for(int line = 0; line < TOTAL_GRIDS; ++line) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(rand.nextInt(BOARD_SIZE));
+                sb.append("(").append(rand.nextInt(BOARD_SIZE));
                 for(int dim = 1; dim < PROBLEM_DIMENSION; ++dim) {
-                    sb.append(" ").append(rand.nextInt(BOARD_SIZE));
+                    sb.append(",").append(rand.nextInt(BOARD_SIZE));
                 }
-                sb.append("\t");
+                sb.append(")\t");
                 sb.append(rand.nextDouble());
                 writer.println(sb.toString());
             }

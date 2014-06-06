@@ -82,7 +82,7 @@ public class Clusterisation {
             br = new BufferedReader(new FileReader(Main.INPUT_FILE));
             String line;
             while ((line = br.readLine()) != null) {
-                String[] coords = line.split("\\t")[0].split(" ");
+                String[] coords = line.split("\\t")[0].replaceAll("\\(|\\)","").split(",");
                 double density = Double.parseDouble(line.split("\\t")[1]);
 
                 if(density > Main.TRANSITIONAL_THRESHOLD) { // te filtracje mozna przeprowadzic juz wczesniej
