@@ -35,7 +35,7 @@ public class Test {
     public static void main(String[] args) {
         Clusterisation c = new Clusterisation();
 
-        generateData();
+//        generateData();
 
         c.readFromFile();
 

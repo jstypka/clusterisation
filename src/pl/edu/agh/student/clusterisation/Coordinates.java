@@ -2,6 +2,7 @@ package pl.edu.agh.student.clusterisation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Coordinates {
 
@@ -38,6 +39,10 @@ public class Coordinates {
 
     public int getSize() {
         return coords.size();
+    }
+
+    public int getCluster(Map<Coordinates,Grid> gridList) {
+        return gridList.get(this).cluster;
     }
 
     @Override

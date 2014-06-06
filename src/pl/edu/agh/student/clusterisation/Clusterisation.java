@@ -110,7 +110,7 @@ public class Clusterisation {
     private List<Coordinates> getCoordsInCluster(int cluster, List<Coordinates> neighbours) {
         List<Coordinates> clusterFellows = new LinkedList<>();
         for(Coordinates n : neighbours) {
-            if(gridList.get(n).cluster == cluster) {
+            if(n.getCluster(gridList) == cluster) {
                 clusterFellows.add(n);
             }
         }
@@ -121,7 +121,7 @@ public class Clusterisation {
         LinkedList<Integer> result = new LinkedList<>();
         int largestYet = -1;
         for(Coordinates c : neighbours) {
-            int cluster = gridList.get(c).cluster;
+            int cluster = c.getCluster(gridList);
             if(cluster != -1) {
                 if(result.isEmpty() || clusters.get(cluster).size() > largestYet) {
                     largestYet = clusters.get(cluster).size();
@@ -157,12 +157,23 @@ public class Clusterisation {
             return true;
         }
         for(Coordinates n: neighbours) {
-            int neighbourCluster = gridList.get(n).cluster;
+            int neighbourCluster = n.getCluster(gridList);
             if(neighbourCluster == -1 && !n.equals(current_trans)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private List<Integer> getAdjacentClusters(List<Coordinates> neighbours) {
+        List<Integer> adjacentClusters = new LinkedList<>();
+        for(Coordinates n: neighbours) {
+            int c = n.getCluster(gridList);
+            if(c != -1) {
+                adjacentClusters.add(c);
+            }
+        }
+        return adjacentClusters;
     }
 
     private void initialClustering() {
@@ -205,7 +216,7 @@ public class Clusterisation {
                 for(Coordinates ngbr : neighbours) {
                     if(gridList.get(ngbr).isDense()) {
                         dfsStack.push(ngbr);
-                    } else {
+                    } else if(!transitionalGrids.contains(ngbr)){
                         transitionalGrids.add(ngbr);
                     }
                 }
@@ -228,7 +239,7 @@ public class Clusterisation {
                 List<Coordinates> neighbours = getNeighbours(current_trans);
 
                 // check if all neighbours are in the same cluster
-                if(neighbours.size() == current_trans.getSize()){
+                if(neighbours.size() == 2 * current_trans.getSize()){
                     boolean oneCluster = true;
                     for(int i = 1; i < neighbours.size(); ++i) {
                         if(gridList.get(neighbours.get(i)).cluster != gridList.get(neighbours.get(i - 1)).cluster) {
@@ -247,10 +258,10 @@ public class Clusterisation {
 
                     assert !gridList.get(current_trans).isDense();
                     assert gridList.get(biggestDense).isDense();
-                    assert gridList.get(biggestDense).cluster > -1;
+                    assert biggestDense.getCluster(gridList) > -1;
 
                     // add current grid to the cluster
-                    int newCluster = gridList.get(biggestDense).cluster;
+                    int newCluster = biggestDense.getCluster(gridList);
                     addGridToCluster(current_trans, newCluster, neighbours);
                     appliedChanges = true;
                     continue;
@@ -280,9 +291,21 @@ public class Clusterisation {
         }
     }
 
+    public void mergeClusters() {
+        for(Coordinates current_trans: transitionalGrids) {
+            if(current_trans.getCluster(gridList) == -1) {
+                continue;
+            }
+
+            List<Coordinates> neighbours = getNeighbours(current_trans);
+            List<Integer> adjacentClusters = getAdjacentClusters(neighbours);
+        }
+    }
+
     public void clusterize() {
         initialClustering();
         adjustClustering();
+//        mergeClusters();
     }
 
     public void printClusters() {
@@ -297,7 +320,7 @@ public class Clusterisation {
                 list.add(i);
                 String c = " . ";
                 if(gridList.containsKey(new Coordinates(list))) {
-                    int g = gridList.get(new Coordinates(list)).cluster;
+                    int g = new Coordinates(list).getCluster(gridList);
                     if(g != -1){
                         c = " " + Integer.toString(g) + " ";
                     } else {
