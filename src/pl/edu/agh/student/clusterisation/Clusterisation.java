@@ -7,6 +7,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class Clusterisation {
 
     public Map<Coordinates, Grid> gridList;
@@ -169,11 +172,41 @@ public class Clusterisation {
         List<Integer> adjacentClusters = new LinkedList<>();
         for(Coordinates n: neighbours) {
             int c = n.getCluster(gridList);
-            if(c != -1) {
+            if(c != -1 && !adjacentClusters.contains(c)) {
                 adjacentClusters.add(c);
             }
         }
         return adjacentClusters;
+    }
+
+    private void mergeTwoClusters(int destination, int from) {
+        Set<Coordinates> destinationSet = clusters.get(destination);
+        Set<Coordinates> fromSet = clusters.get(from);
+
+        for(Coordinates coords: fromSet) {
+            Grid g = gridList.get(coords);
+            g.cluster = destination;
+        }
+
+        destinationSet.addAll(fromSet);
+        clusters.remove(from);
+    }
+
+    private boolean tryToMerge(int c, int other) {
+        Set<Coordinates> cluster = clusters.get(c);
+        for(Coordinates current_trans : cluster) {
+            // we look only for transitional grids
+            if(gridList.get(current_trans).isDense()) {
+                continue;
+            }
+
+            List<Coordinates> neighbours = getNeighbours(current_trans);
+            List<Integer> adjacentClusters = getAdjacentClusters(neighbours);
+            if(adjacentClusters.size() == 2 && adjacentClusters.contains(other) && neighbours.size() == 2 * current_trans.getSize()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void createClusters() {
@@ -292,20 +325,39 @@ public class Clusterisation {
     }
 
     public void mergeClusters() {
-        for(Coordinates current_trans: transitionalGrids) {
-            if(current_trans.getCluster(gridList) == -1) {
-                continue;
-            }
+        boolean appliedChanges = true;
+        while(appliedChanges) {
+            appliedChanges = false;
+            for(Coordinates current_trans: transitionalGrids) {
+                if(current_trans.getCluster(gridList) == -1) {
+                    continue;
+                }
 
-            List<Coordinates> neighbours = getNeighbours(current_trans);
-            List<Integer> adjacentClusters = getAdjacentClusters(neighbours);
+                int thisCluster = current_trans.getCluster(gridList);
+                List<Coordinates> neighbours = getNeighbours(current_trans);
+                List<Integer> adjacentClusters = getAdjacentClusters(neighbours); // might be good to sort it
+                adjacentClusters.remove(new Integer(thisCluster));
+                if(adjacentClusters.size() == 1 && neighbours.size() == 2 * current_trans.getSize()) {
+                    continue;
+                }
+
+                // try to merge each cluster with thisCluster
+                for(int i = 0; i < adjacentClusters.size(); ++i) {
+                    int c1 = adjacentClusters.get(i);
+                    if(tryToMerge(c1, thisCluster) && tryToMerge(thisCluster, c1)) {
+                        mergeTwoClusters(min(c1, thisCluster), max(c1, thisCluster));
+                        appliedChanges = true;
+                        break;
+                    }
+                }
+            }
         }
     }
 
     public void clusterize() {
         createClusters();
         attachTransitionalGrids();
-//        mergeClusters();
+        mergeClusters();
     }
 
     public void printClusters() {
@@ -321,7 +373,9 @@ public class Clusterisation {
                 String c = " . ";
                 if(gridList.containsKey(new Coordinates(list))) {
                     int g = new Coordinates(list).getCluster(gridList);
-                    if(g != -1){
+                    if(g == -1){
+                        c = Integer.toString(g) + " ";
+                    } else if (g < 10){
                         c = " " + Integer.toString(g) + " ";
                     } else {
                         c = Integer.toString(g) + " ";
@@ -332,6 +386,6 @@ public class Clusterisation {
             }
             System.out.println();
         }
-//        System.out.println(transitionalGrids);
+        System.out.println();
     }
 }

@@ -7,8 +7,8 @@ import java.util.Random;
 
 public class Test {
 
-    public static final int TOTAL_GRIDS = 15;
-    public static final int BOARD_SIZE = 5;
+    public static final int TOTAL_GRIDS = 75;
+    public static final int BOARD_SIZE = 8;
     public static final int PROBLEM_DIMENSION = 2;
 
     private static void generateData(){
@@ -35,7 +35,7 @@ public class Test {
     public static void main(String[] args) {
         Clusterisation c = new Clusterisation();
 
-//        generateData();
+        generateData();
 
         c.readFromFile();
 
