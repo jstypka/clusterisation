@@ -176,7 +176,7 @@ public class Clusterisation {
         return adjacentClusters;
     }
 
-    private void initialClustering() {
+    private void createClusters() {
         int cluster = 1;
 
         // iterate through the gridList
@@ -224,7 +224,7 @@ public class Clusterisation {
         }
     }
 
-    private void adjustClustering() {
+    private void attachTransitionalGrids() {
         boolean appliedChanges = true;
         while(appliedChanges) {
             appliedChanges = false;
@@ -303,8 +303,8 @@ public class Clusterisation {
     }
 
     public void clusterize() {
-        initialClustering();
-        adjustClustering();
+        createClusters();
+        attachTransitionalGrids();
 //        mergeClusters();
     }
 
