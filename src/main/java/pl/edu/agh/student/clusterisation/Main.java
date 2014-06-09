@@ -39,7 +39,7 @@ public class Main {
     public static void main(String[] args) {
         Clusterisation c = new Clusterisation();
 
-        Main.generateData();
+//        Main.generateData();
 
         c.readFromFile();
 
