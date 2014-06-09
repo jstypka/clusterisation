@@ -1,9 +1,6 @@
 package pl.edu.agh.student.clusterisation;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static java.lang.Math.max;
@@ -73,6 +70,21 @@ public class Clusterisation {
         for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
             System.out.println("Cluster " + cluster++);
             System.out.println(entry.getValue());
+        }
+    }
+
+    public void writeClustersToFile() {
+        PrintWriter writer;
+        try {
+            writer = new PrintWriter(Main.OUTPUT_FILE, "UTF-8");
+            int cluster = 1;
+            for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
+                writer.println("Cluster " + cluster++);
+                writer.println(entry.getValue());
+            }
+            writer.close();
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
     }
 

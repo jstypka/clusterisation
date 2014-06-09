@@ -10,7 +10,8 @@ public class Main {
     public static final int TOTAL_GRIDS = 1000;
     public static final int BOARD_SIZE = 30;
     public static final int PROBLEM_DIMENSION = 2;
-    public static final String INPUT_FILE = "output/part-r-00000";
+    public static final String INPUT_FILE = "../pipe/part-r-00000";
+    public static final String OUTPUT_FILE = "../output/clusters";
     public static final double TRANSITIONAL_THRESHOLD = 0.0;
     public static final double DENSE_THRESHOLD = 0.33;
 
@@ -48,6 +49,6 @@ public class Main {
 
         c.printClusters();
 
-        c.listClusters();
+        c.writeClustersToFile();
     }
 }
