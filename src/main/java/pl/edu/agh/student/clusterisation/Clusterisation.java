@@ -79,8 +79,14 @@ public class Clusterisation {
             writer = new PrintWriter(Main.OUTPUT_FILE, "UTF-8");
             int cluster = 1;
             for (Map.Entry<Integer,Set<Coordinates>> entry : clusters.entrySet()){
-                writer.println("Cluster " + cluster++);
-                writer.println(entry.getValue());
+                writer.println("##### " + cluster++);
+                for (Coordinates c : entry.getValue()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Integer i : c.coords) {
+                        sb.append(i).append(" ");
+                    }
+                    writer.println(sb.toString());
+                }
             }
             writer.close();
         } catch (FileNotFoundException | UnsupportedEncodingException e) {
